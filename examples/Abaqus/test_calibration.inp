@@ -1,0 +1,51 @@
+*INCLUDE,INPUT=test_model.geom
+**
+*MATERIAL, NAME=rock
+*ELASTIC, TYPE = ISOTROPIC
+40.0e+09, 0.22, 0.0
+*DENSITY
+2500
+**
+*SOLIDSECTION,ELSET=rock, MATERIAL=rock
+**
+**
+*STEP
+*STATIC
+*DLOAD
+,GRAV,9.81,0,0,-1
+*BOUNDARY
+X_move, 1, , 4.00
+Y_move, 2, , -4.00
+X_hold, 1, , 0
+Y_hold, 2, , 0
+bottom, 3, , 0
+*OUTPUT, FIELD
+*ELEMENT OUTPUT
+S
+*NODE OUTPUT
+COORD, U
+*EL FILE
+S
+*NODE FILE
+COORD, U
+*END STEP
+**
+*STEP
+*STATIC
+*BOUNDARY
+X_move, 1, , 2.00
+Y_move, 2, , -5.00
+X_hold, 1, , 0
+Y_hold, 2, , 0
+bottom, 3, , 0
+*END STEP
+**
+*STEP
+*STATIC
+*BOUNDARY
+X_move, 1, , 4.00
+Y_move, 2, , -3.00
+X_hold, 1, , 0
+Y_hold, 2, , 0
+bottom, 3, , 0
+*END STEP
