@@ -1,10 +1,10 @@
-# PyFAST Calibration v1.0 - GPLv3
+# PyFAST Calibration v1.1 - GPLv3
 # Moritz O. Ziegler, mziegler@gfz-potsdam.de
 # Manual:   https://doi.org/10.48440/wsm.2021.003
 # Download: https://github.com/MorZieg/PyFAST_Calibration
 ###############################################################################################
 #
-# Python Fast Automatic Stress Tensor Calibration v1.0 is a Python 3 translation
+# Python Fast Automatic Stress Tensor Calibration v1.1 is a Python 3 translation
 # of the FAST Calibration Matlab tool. It supports Moose and Abaqus solver, PyTecplot,
 # GeoStressCmd (https://doi.org/10.5880/wsm.2020.001), and runs on Windows and Linux
 # systems. It can be run as stand-alone script or called from another script.
@@ -38,7 +38,7 @@ pytecplot = 'on' # 'off'
 stress_vars = ['SHmax','Shmin'] #['XX Stress','YY Stress'] # ['stress_xx','stress_yy']
 
 #  The name of the calibration file with three boundary condition scenarios.
-name = 'calibration_scenarios'
+name = 'test_calibration'
 
 #  The current folder (only required for Tecplot to export the data).
 folder = 'c:\\Data\\User\\Documents\\Modelling\\FAST'
@@ -51,15 +51,21 @@ shmax = [[3500, 3500, -2900, 100, 1],[3500, 3500, -2900, 100, 1]]
 shmin = [[3500, 3500, -2900, 48, 1]]
 
 ###############################################################################################
-def main(shmax,shmin,stress_vars,name,solver,pytecplot):
+def main(shmax,shmin,stress_vars,bcs,name,solver,pytecplot):
+  import os.path
+  import tecplot
+  
   # Main script calls functions according to the chosen parameters.
   if pytecplot == 'on':
-    if solver == 'abaqus':
-      load_abq(name)
-    elif solver == 'moose':
-      load_mse(name)
+    if not os.path.exists((name+'.plt')):
+      if solver == 'abaqus':
+        load_abq(name)
+      elif solver == 'moose':
+        load_mse(name)
+      else:
+        print ('ERROR! Specify a solver.')
     else:
-      print ('ERROR! Specify a solver.')
+      print('Using existing *.plt file')
     [shmax_calib,shmin_calib] = extract_tp(name,solver,shmax,shmin,stress_vars)
     
   elif pytecplot == 'off':
@@ -92,7 +98,8 @@ def load_abq(name):
   # (and syntax) required depending on operating system.
   import tecplot as tp
   import platform
-  
+
+  print('Loading *.odb file')
   if platform.system() == 'Linux':
     tp.macro.execute_command("""$!ReadDataSet  '\"StandardSyntax\" \"1.0\" \"FEALoaderVersion\" \"446\" \"FILENAME_File\" \"%s.fil\" \"AutoAssignStrandIDs\" \"Yes\"'\n"""
     """  DataSetReader = 'ABAQUS .fil Data (FEA)'""" % name)
@@ -113,7 +120,8 @@ def load_mse(name):
   # Load Moose output files consecutively, assign solution times, and generate
   # variable names suitable for GeoStress and GeoStressCmd and save as *.plt file.
   import tecplot as tp
-  
+
+  print('Loading Moose output file')
   # Load first solver output file.
   tp.macro.execute_command("""$!ReadDataSet  '\"%s_0001.dat\" '
     ReadDataOption = New
@@ -149,14 +157,14 @@ def extract_tp(name,solver,shmax,shmin,stress_vars):
   import numpy as np
   import platform
   
-  model = tp.data.load_tecplot('%s.plt' % name)
+  model = tp.data.load_tecplot('%s.plt' % name, read_data_option=2)
   
   if platform.system() == 'Linux' and solver == 'abaqus':
     # Convert the cell centered stress tensor variables from the *.fil file to nodal variables.
     cell2nodal(model)
   
   if solver == 'moose':
-    rnm_vrbls
+    rnm_vrbls()
   
   # Run GeoStressCmd if SHmax and Shmin are desired.
   if stress_vars[0] == 'SHmax':
@@ -397,8 +405,8 @@ def calibration(shmax,shmin,shmax_calib,shmin_calib,bcs):
   
 ###############################################################################################
 if __name__ == '__main__':
-  print('Running PyFAST Calibration v1.0')
-  [bcx,bcy] = main(shmax, shmin,stress_vars,name,solver,pytecplot)
+  print('Running PyFAST Calibration v1.1')
+  [bcx,bcy] = main(shmax,shmin,stress_vars,bcs,name,solver,pytecplot)
   
   # If the function is run as a stand-alone script the boundary conditions are
   # printed to the screen.
